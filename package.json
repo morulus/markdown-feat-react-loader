@@ -1,0 +1,48 @@
+{
+  "name": "markdown-feat-react-loader",
+  "version": "0.1.0",
+  "description": "Use Jsx inside markdown",
+  "main": "lib/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "babel src -d lib",
+    "prepublish": "npm run build"
+  },
+  "keywords": [
+    "babel",
+    "loader",
+    "jsx",
+    "markdown"
+  ],
+  "author": "Vladimir Morulus <vladimirmorulus@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "babel-plugin-transform-react-jsx": "^6.24.1",
+    "loader-utils": "^1.1.0",
+    "react": "^16.2.0",
+    "react-markdown": "^3.1.1",
+    "remark-react": "^4.0.1",
+    "remark-stringify": "^4.0.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.0.0-beta.35",
+    "@babel/core": "^7.0.0-beta.35",
+    "@babel/preset-env": "^7.0.0-beta.35",
+    "babel-plugin-transform-es2015-spread": "^6.22.0",
+    "eslint": "^4.13.1"
+  },
+  "peerDependencies": {
+    "react": "^15.0.0 || ^16.0.0"
+  },
+  "directories": {
+    "lib": "lib"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/morulus/markdown-feat-react-loader.git"
+  },
+  "bugs": {
+    "url": "https://github.com/morulus/markdown-feat-react-loader/issues"
+  },
+  "homepage": "https://github.com/morulus/markdown-feat-react-loader#readme"
+}
