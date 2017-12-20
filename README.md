@@ -3,7 +3,7 @@ Markdown feat. React loader
 
 Loader, which not only converts markdown to the [React](https://reactjs.org/), but can run javascript from code blocks.
 
-Look at here: [examples/index.md](examples/index.md)
+Look at here: [examples/simply/index.md](https://github.com/morulus/markdown-feat-react-loader/blob/master/examples/simply/index.md)
 
 And try it:
 `npm run example`
