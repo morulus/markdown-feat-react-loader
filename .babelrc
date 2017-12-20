@@ -1,6 +1,7 @@
 {
   "presets": [
-    ["@babel/env", {
+    "react",
+    ["env", {
       "targets": {
         "node": "6.10"
       },
@@ -8,6 +9,7 @@
     }]
   ],
   "plugins": [
-    "transform-es2015-spread"
+    "transform-es2015-spread",
+    ["transform-object-rest-spread", { "useBuiltIns": true }]
   ]
 }

@@ -1,7 +1,7 @@
 const unified = require(`unified`)
 const parse = require(`remark-parse`)
 const astToMarkdown = require(`remark-stringify`)
-const babel = require(`@babel/core`)
+const babel = require(`babel-core`)
 const loaderUtils = require(`loader-utils`)
 const cutUseStrict = require(`./cutUseStrict`)
 
@@ -10,7 +10,7 @@ const emptyModule = require.resolve(`./empty`)
 /* Babel repl */
 const repl = (code) => babel.transform(code, {
   presets: [
-    [require.resolve(`@babel/preset-env`), {
+    [require.resolve(`babel-preset-env`), {
       targets: {
         browsers: [`last 2 versions`],
       },
@@ -53,13 +53,13 @@ function defaultRenderer(ast) {
 }
 
 function extractJsxComponent(item) {
-  if (item.type === `html`) {
-    const tagNameMatch = item.value.trim().match(tagNameRegex)
-    if (tagNameMatch && ReactElementNameRegEx.test(tagNameMatch[1])) {
+  if (item.type === `code` && item.lang === `js{run}`) {
+    // const tagNameMatch = item.value.trim().match(tagNameRegex)
+    // if (tagNameMatch && ReactElementNameRegEx.test(tagNameMatch[1])) {
       /* If tag has name, which seems like React element, we just move its
        * code to the code chunks. */
-      const transplied = repl(item.value.trim())
-      codechunks.push(`function() { return ${transplied.code}}`)
+      const transplied = item.value.trim()
+      codechunks.push(`function() { return (${cutUseStrict(transplied)})}`)
       /* And ast element converts to the code with lang `chunk` */
       return {
         ...item,
@@ -67,7 +67,7 @@ function extractJsxComponent(item) {
         lang : INJECT_REACT_COMPONENT_LANG,
         value: `${codechunks.length - 1}`,
       }
-    }
+    // }
   }
 
   if (item.children && typeof item.children === `object` && item.children instanceof Array) {
@@ -77,8 +77,8 @@ function extractJsxComponent(item) {
 }
 
 function extractCodeChunk(item) {
-  if (item.type === `code` && item.lang === `eval`) {
-    evalChunks.push(cutUseStrict(repl(item.value.trim()).code))
+  if (item.type === `code` && item.lang === `js{eval}`) {
+    evalChunks.push(item.value.trim())
     return false
   } else if (item.children && typeof item.children === `object` && item.children instanceof Array) {
     item.children = item.children.map(extractCodeChunk).filter(Boolean)
@@ -218,9 +218,9 @@ module.exports = function markdownReactStory(content) {
       )
     }
   `
-
-  const result = `${header}
-${code}`
+  const source = `${header}
+${code}`;
+  const result = repl(source).code;
 
   return result
 }
