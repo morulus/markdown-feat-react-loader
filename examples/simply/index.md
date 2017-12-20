@@ -8,13 +8,13 @@ This is the simply doc
 
 Hello, I have written awesome component, called Simply. Look at him.
 
-```js{run}
+```js{render}
 <Simply />
 ```
 
 And after element, we will continue to write story.
 
-```js{run}
+```js{render}
 <Wrapper>
   # Title 1
   # Title 2

@@ -53,7 +53,7 @@ function defaultRenderer(ast) {
 }
 
 function extractJsxComponent(item) {
-  if (item.type === `code` && item.lang === `js{run}`) {
+  if (item.type === `code` && item.lang === `js{render}`) {
     // const tagNameMatch = item.value.trim().match(tagNameRegex)
     // if (tagNameMatch && ReactElementNameRegEx.test(tagNameMatch[1])) {
       /* If tag has name, which seems like React element, we just move its
