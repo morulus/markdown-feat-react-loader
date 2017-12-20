@@ -112,60 +112,9 @@ module.exports = function markdownReactStory(content) {
     var React = require('${require.resolve(`react`)}');
     ${evalChunks.join(`\n`)}
 
-    var __REACT_IN_MARKDOWN__API = {
-      ReactMarkdown: require('react-markdown'),
-      createMarkdownInjectableCode: (function() {
-        function renderExternalElement(Element) {
-          if (typeof Element === 'function') {
-            return React.createElement(Element);
-          }
-          return Element;
-        }
+    var __REACT_IN_MARKDOWN__API = {};
 
-        function renderError(message) {
-          return React.createElement(
-            'pre',
-            null,
-            React.createElement('code', {
-              style: {
-                backgroundColor: "red",
-                color: "black",
-              },
-              message
-            })
-          )
-        }
-
-        return function reCreateMarkdownInjectableCode(externalElements) {
-          return function MarkdownInjectableCode(props) {
-            if (props.language === ${JSON.stringify(INJECT_REACT_COMPONENT_LANG)}) {
-              if (!externalElements) {
-                return renderError("No props.externalElements provided");
-              }
-
-              const Element = externalElements[props.value.trim()];
-
-              if (!Element) {
-                return renderError("External element in undefined at props.externalElements["+props.value.trim()+"]");
-              }
-
-              return renderExternalElement(Element);
-            }
-            return React.createElement(
-              'pre',
-              null,
-              React.createElement(
-                'code',
-                null,
-                props.value || "",
-              )
-            )
-          }
-        }
-      })()
-    }
-
-    __REACT_IN_MARKDOWN__API.externalElements = [${codechunks.join(`,\n`)}];
+    __REACT_IN_MARKDOWN__API.ReactMarkdown = require('react-markdown');
 
     __REACT_IN_MARKDOWN__API.customReactMarkdownConfig = {
       renderers: {}
@@ -196,6 +145,54 @@ module.exports = function markdownReactStory(content) {
         )
       }
     )
+
+    __REACT_IN_MARKDOWN__API.createMarkdownInjectableCode = (function() {
+      function renderExternalElement(Element) {
+        if (typeof Element === 'function') {
+          return React.createElement(Element);
+        }
+        return Element;
+      }
+
+      function renderError(message) {
+        return React.createElement(
+          'pre',
+          null,
+          React.createElement('code', {
+            style: {
+              backgroundColor: "red",
+              color: "black",
+            },
+            message
+          })
+        )
+      }
+
+      return function reCreateMarkdownInjectableCode(externalElements) {
+        return function MarkdownInjectableCode(props) {
+          if (props.language === ${JSON.stringify(INJECT_REACT_COMPONENT_LANG)}) {
+            if (!externalElements) {
+              return renderError("No props.externalElements provided");
+            }
+
+            const Element = externalElements[props.value.trim()];
+
+            if (!Element) {
+              return renderError("External element in undefined at props.externalElements["+props.value.trim()+"]");
+            }
+
+            return renderExternalElement(Element);
+          }
+          return React.createElement(
+            __REACT_IN_MARKDOWN__API.reactMarkdownConfig.renderers.code,
+            props,
+            props.children
+          )
+        }
+      }
+    })()
+
+    __REACT_IN_MARKDOWN__API.externalElements = [${codechunks.join(`,\n`)}];
 
     __REACT_IN_MARKDOWN__API.Markdown = function(props) {
       const externalElements = props.externalElements;

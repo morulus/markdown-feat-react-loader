@@ -22,3 +22,8 @@ And after element, we will continue to write story.
   But keep in the **mind**, that wrapped text by JSX *will* not be parsed by markdown
 </Wrapper>
 ```
+
+
+```js
+Native code
+```
