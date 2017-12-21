@@ -1,6 +1,6 @@
 {
   "name": "markdown-feat-react-loader",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Use js inside markdown",
   "main": "lib/index.js",
   "scripts": {
@@ -14,7 +14,8 @@
     "babel",
     "loader",
     "jsx",
-    "markdown"
+    "markdown",
+    "react"
   ],
   "author": "Vladimir Morulus <vladimirmorulus@gmail.com>",
   "license": "MIT",
