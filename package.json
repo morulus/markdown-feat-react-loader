@@ -1,13 +1,14 @@
 {
   "name": "markdown-feat-react-loader",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Use js inside markdown",
   "main": "lib/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "babel src -d lib",
     "prepublish": "npm run build",
-    "example": "npm run build && webpack && serve -o examples/simply/dist"
+    "example": "npm run build && webpack && serve -o examples/simply/dist",
+    "togp": "npm run build && node bin/publishgp.js"
   },
   "keywords": [
     "babel",

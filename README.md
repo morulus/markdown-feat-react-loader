@@ -3,10 +3,19 @@ Markdown feat. React loader
 
 Loader, which not only converts markdown to the [React](https://reactjs.org/), but can run javascript from code blocks.
 
-Look at here: [examples/simply/index.md](https://github.com/morulus/markdown-feat-react-loader/blob/master/examples/simply/index.md)
+Look at example:
+[https://morulus.github.io/markdown-feat-react-loader](https://morulus.github.io/markdown-feat-react-loader)
+
+Look at example source: [examples/simply/index.md](https://github.com/morulus/markdown-feat-react-loader/blob/master/examples/simply/index.md)
 
 And try it:
 `npm run example`
+
+Install loader:
+
+```
+npm install markdown-feat-react-loader --D
+```
 
 Usage
 --
@@ -23,19 +32,24 @@ rules: [
 ]
 ```
 
-Use code block with language
+Usage in your markdown:
+--
+
+Loader enhances the markdown syntax. Like `code` lang extended property.
+
+- Use code block with language
 ` ```js{eval} `
 to eval some script at the beginning of the document.
 
-Use code block with language
+- Use code block with language
 ` ```js{render} `
 to inline render React component from the code.
 
-Use code block with language
+- Use code block with language
 ` ```js{+render}`
 to display the code and render the code both
 
-Use code block with language
+- Use code block with language
 ` ```js{render+}`
 to render the code, and then display the code
 
@@ -87,3 +101,32 @@ module.exports = {
   }
 }
 ```
+
+### AST renderer
+
+In super-advanced way you can add your custom logic to render AST to javascript.
+
+```js
+{
+  test: /\.md$/,
+  exclude: /node_modules/,
+  use: {
+    loader: 'markdown-feat-react-loader',
+    options: {
+      renderer: function(ast, evalChunks) {
+        // ast - Markdown ast
+        // evalChunks - chunks of code, which will be injected to the top of javascript document
+        // ...
+
+        return `...here you javascript...`;
+      },
+    }
+  }
+}
+
+```
+
+License
+--
+
+MIT, 2017
