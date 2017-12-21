@@ -44,8 +44,6 @@ const parser = unified().use(parse, { commonmark: true })
 const tagNameRegex = /^<([^\s/>]+)/
 const ReactElementNameRegEx = /^[A-Z]{1}[\w\d]?/
 
-const evalChunks = []
-const codechunks = []
 const RENDER_LANG_MASK = /^(js){(\+)?render(\+)?}/
 
 const INJECT_REACT_COMPONENT_LANG = `inject:eval:chunk`
@@ -64,59 +62,64 @@ function defaultRenderer(ast) {
   ); }`
 }
 
-function extractJsxComponent(item) {
-  if (item.type === `code` && RENDER_LANG_MASK.test(item.lang)) {
-      // Detect the plus (+) character
-      const match = item.lang.match(RENDER_LANG_MASK);
-      const lang = match[1];
-      const plus = !!(match[2] || match[3]);
-      const code = item.value.trim();
-      const transplied = item.value.trim()
-      codechunks.push(`__REACT_IN_MARKDOWN__API.reactMarkdownConfig.renderers.render(function(props) { return (${cutUseStrict(transplied)}); }, ${JSON.stringify(code)})`)
-      /* And ast element converts to the code with lang `chunk` */
-      const codeChunk = {
-        ...item,
-        type : `code`,
-        lang : INJECT_REACT_COMPONENT_LANG,
-        value: `${codechunks.length - 1}`,
-      };
-      if (plus) {
-        const code = {
-          ...item,
-          type: lang
-        }
-        ;
-        return match[1]
-          ? [
-            codeChunk,
-            item
-          ]
-          : [
-            item,
-            codeChunk
-          ]
-      }
-      return codeChunk;
-    // }
-  }
-
-  if (item.children && typeof item.children === `object` && item.children instanceof Array) {
-    item.children = flatArray(item.children.map(extractJsxComponent));
-  }
-  return item
-}
-
-function extractCodeChunk(item) {
-  if (item.type === `code` && item.lang === `js{eval}`) {
-    evalChunks.push(item.value.trim())
-    return false
-  } else if (item.children && typeof item.children === `object` && item.children instanceof Array) {
-    item.children = item.children.map(extractCodeChunk).filter(Boolean)
-  }
-  return item
-}
-
 module.exports = function markdownReactStory(content) {
+    const evalChunks = []
+    const codechunks = []
+
+    function extractJsxComponent(item) {
+      if (item.type === `code` && RENDER_LANG_MASK.test(item.lang)) {
+          // Detect the plus (+) character
+          const match = item.lang.match(RENDER_LANG_MASK);
+          const lang = match[1];
+          const plus = !!(match[2] || match[3]);
+          const code = item.value.trim();
+          const transplied = item.value.trim()
+          codechunks.push(`__REACT_IN_MARKDOWN__API.reactMarkdownConfig.renderers.render(function(props) { return (${cutUseStrict(transplied)}); }, ${JSON.stringify(code)})`)
+          /* And ast element converts to the code with lang `chunk` */
+          const codeChunk = {
+            ...item,
+            type : `code`,
+            lang : INJECT_REACT_COMPONENT_LANG,
+            value: `${codechunks.length - 1}`,
+          };
+          if (plus) {
+            const code = {
+              ...item,
+              type: lang
+            }
+            ;
+            return match[1]
+              ? [
+                codeChunk,
+                item
+              ]
+              : [
+                item,
+                codeChunk
+              ]
+          }
+          return codeChunk;
+        // }
+      }
+
+      if (item.children && typeof item.children === `object` && item.children instanceof Array) {
+        item.children = flatArray(item.children.map(extractJsxComponent));
+      }
+      return item
+    }
+
+  // Prepare API
+  function extractCodeChunk(item) {
+    if (item.type === `code` && item.lang === `js{eval}`) {
+      evalChunks.push(item.value.trim())
+      return false
+    } else if (item.children && typeof item.children === `object` && item.children instanceof Array) {
+      item.children = item.children.map(extractCodeChunk).filter(Boolean)
+    }
+    return item
+  }
+
+
   const query = Object.assign({
     config  : ``,
     renderer: defaultRenderer,
