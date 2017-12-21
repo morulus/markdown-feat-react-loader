@@ -17,4 +17,12 @@ to eval some script at the beginning of the document.
 
 Use code block with language
 ` ```js{render} `
-to inline render React component.
+to inline render React component from the code.
+
+Use code block with language
+` ```js{+render}`
+to display the code and render the code both
+
+Use code block with language
+` ```js{render+}`
+to render the code, and then display the code

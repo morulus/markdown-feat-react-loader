@@ -12,7 +12,12 @@ module.exports = {
       {
         test: /\.md$/,
         exclude: /node_modules/,
-        use: path.join(__dirname, 'lib/index.js'),
+        use: {
+          loader :  path.join(__dirname, 'lib/index.js'),
+          options: {
+            config  : require.resolve(`./react-markdown.config.js`),
+          },
+        }
       },
       {
         test: /\.js$/,

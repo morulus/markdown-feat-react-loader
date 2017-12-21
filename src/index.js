@@ -27,6 +27,16 @@ const repl = (code) => babel.transform(code, {
   sourceType: `module`,
 })
 
+function isArray(a) {
+  return a && typeof a === 'object' && a instanceof Array;
+}
+
+function flatArray(arr) {
+  return arr.reduce(function(nextArra, next) {
+    return nextArra.concat(isArray(next) ? next : [next]);
+  }, [])
+}
+
 const PACAKGE_NAME = `react-in-markdown-loader`
 
 const parser = unified().use(parse, { commonmark: true })
@@ -36,6 +46,7 @@ const ReactElementNameRegEx = /^[A-Z]{1}[\w\d]?/
 
 const evalChunks = []
 const codechunks = []
+const RENDER_LANG_MASK = /^(js){(\+)?render(\+)?}/
 
 const INJECT_REACT_COMPONENT_LANG = `inject:eval:chunk`
 
@@ -53,25 +64,42 @@ function defaultRenderer(ast) {
 }
 
 function extractJsxComponent(item) {
-  if (item.type === `code` && item.lang === `js{render}`) {
-    // const tagNameMatch = item.value.trim().match(tagNameRegex)
-    // if (tagNameMatch && ReactElementNameRegEx.test(tagNameMatch[1])) {
-      /* If tag has name, which seems like React element, we just move its
-       * code to the code chunks. */
+  if (item.type === `code` && RENDER_LANG_MASK.test(item.lang)) {
+      // Detect the plus (+) character
+      const match = item.lang.match(RENDER_LANG_MASK);
+      const lang = match[1];
+      const plus = !!(match[2] || match[3]);
       const transplied = item.value.trim()
       codechunks.push(`function() { return (${cutUseStrict(transplied)})}`)
       /* And ast element converts to the code with lang `chunk` */
-      return {
+      const codeChunk = {
         ...item,
         type : `code`,
         lang : INJECT_REACT_COMPONENT_LANG,
         value: `${codechunks.length - 1}`,
+      };
+      if (plus) {
+        const code = {
+          ...item,
+          type: lang
+        }
+        ;
+        return match[1]
+          ? [
+            codeChunk,
+            item
+          ]
+          : [
+            item,
+            codeChunk
+          ]
       }
+      return codeChunk;
     // }
   }
 
   if (item.children && typeof item.children === `object` && item.children instanceof Array) {
-    item.children = item.children.map(extractJsxComponent)
+    item.children = flatArray(item.children.map(extractJsxComponent));
   }
   return item
 }
@@ -98,7 +126,7 @@ module.exports = function markdownReactStory(content) {
 
   /* Hunt for React components. Every html element with PascalCase name will be transplied in to the
    * special code chunk, called `codechunks`. */
-  ast.children = ast.children.map(extractJsxComponent)
+  ast.children = flatArray(ast.children.map(extractJsxComponent));
 
   /* Hunt eval code chunks */
   ast.children = ast.children.map(extractCodeChunk).filter(Boolean)
@@ -182,6 +210,9 @@ module.exports = function markdownReactStory(content) {
             }
 
             return renderExternalElement(Element);
+          }
+          if (!props.value) {
+            return React.createElement('code', props);
           }
           return React.createElement(
             __REACT_IN_MARKDOWN__API.reactMarkdownConfig.renderers.code,

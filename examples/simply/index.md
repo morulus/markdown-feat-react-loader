@@ -27,3 +27,9 @@ And after element, we will continue to write story.
 ```js
 Native code
 ```
+
+`Inline code`
+
+```js{+render}
+<Simply />
+```
