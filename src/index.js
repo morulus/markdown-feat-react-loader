@@ -69,8 +69,9 @@ function extractJsxComponent(item) {
       const match = item.lang.match(RENDER_LANG_MASK);
       const lang = match[1];
       const plus = !!(match[2] || match[3]);
+      const code = item.value.trim();
       const transplied = item.value.trim()
-      codechunks.push(`function() { return (${cutUseStrict(transplied)})}`)
+      codechunks.push(`__REACT_IN_MARKDOWN__API.reactMarkdownConfig.renderers.render(function(props) { return (${cutUseStrict(transplied)}); }, ${JSON.stringify(code)})`)
       /* And ast element converts to the code with lang `chunk` */
       const codeChunk = {
         ...item,
@@ -165,7 +166,16 @@ module.exports = function markdownReactStory(content) {
       __REACT_IN_MARKDOWN__API.customReactMarkdownConfig,
       {
         renderers: Object.assign(
-          {},
+          {
+            render: function(Component) {
+              return function MarkdownRender(props) {
+                return React.createElement(
+                  Component,
+                  props
+                );
+              };
+            },
+          },
           __REACT_IN_MARKDOWN__API.customReactMarkdownConfig.renderers,
           {
             code: __REACT_IN_MARKDOWN__API.customReactMarkdownConfig.renderers && __REACT_IN_MARKDOWN__API.customReactMarkdownConfig.renderers.code || __REACT_IN_MARKDOWN__API.ReactMarkdown.renderers.code
