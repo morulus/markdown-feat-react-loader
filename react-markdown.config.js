@@ -7,7 +7,7 @@ module.exports = {
       return function(props) {
         return (
           <div>
-            <Component packageJson={packageJson} />
+            <Component packageJson={packageJson} {...props} />
           </div>
         )
       }

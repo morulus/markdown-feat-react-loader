@@ -1,6 +1,6 @@
 {
   "name": "markdown-feat-react-loader",
-  "version": "0.4.2",
+  "version": "1.0.0-beta",
   "description": "Use js inside markdown",
   "main": "lib/index.js",
   "scripts": {

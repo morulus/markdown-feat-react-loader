@@ -1,6 +1,6 @@
 import React from 'react'
 
-export default ({ children, source }) => (
+export default ({ Doc, source }) => (
   <div style={{
       width: "100%"
     }}>
@@ -9,7 +9,11 @@ export default ({ children, source }) => (
         float: "left",
         padding: "20px"
       }}
-    >{children}</div>
+    >
+      <Doc
+        runtimeProp="Hello, world!"
+      />
+    </div>
     <pre style={{
         width: "50%",
         float: "left",

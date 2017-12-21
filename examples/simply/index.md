@@ -8,7 +8,10 @@ import Wrapper from './Wrapper'
 ```
 ==
 
-Hello, I have written awesome component, called Simply. Look at him.
+```js{render}
+<h2>{props.runtimeProp}</h2>
+```
+I have written awesome component, called Simply. Look at him.
 
 ```js{render}
 <Simply />

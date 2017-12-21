@@ -52,15 +52,16 @@ const INJECT_REACT_COMPONENT_LANG = `inject:eval:chunk`
 
 function defaultRenderer(ast) {
   const contentCode = new astToMarkdown.Compiler(ast, `anonym.md`).compile()
-  return `module.exports = (
+  return `module.exports = function MarkdownReact(props) { return (
     React.createElement(
       __REACT_IN_MARKDOWN__API.Markdown,
       {
         source: ${JSON.stringify(contentCode)},
+        userProps: props,
         externalElements: __REACT_IN_MARKDOWN__API.externalElements,
       }
     )
-  )`
+  ); }`
 }
 
 function extractJsxComponent(item) {
@@ -185,9 +186,9 @@ module.exports = function markdownReactStory(content) {
     )
 
     __REACT_IN_MARKDOWN__API.createMarkdownInjectableCode = (function() {
-      function renderExternalElement(Element) {
+      function renderExternalElement(Element, props) {
         if (typeof Element === 'function') {
-          return React.createElement(Element);
+          return React.createElement(Element, props);
         }
         return Element;
       }
@@ -206,7 +207,7 @@ module.exports = function markdownReactStory(content) {
         )
       }
 
-      return function reCreateMarkdownInjectableCode(externalElements) {
+      return function reCreateMarkdownInjectableCode(externalElements, userProps) {
         return function MarkdownInjectableCode(props) {
           if (props.language === ${JSON.stringify(INJECT_REACT_COMPONENT_LANG)}) {
             if (!externalElements) {
@@ -216,10 +217,10 @@ module.exports = function markdownReactStory(content) {
             const Element = externalElements[props.value.trim()];
 
             if (!Element) {
-              return renderError("External element in undefined at props.externalElements["+props.value.trim()+"]");
+              return renderError("External element in undefined at externalElements["+props.value.trim()+"]");
             }
 
-            return renderExternalElement(Element);
+            return renderExternalElement(Element, userProps);
           }
           if (!props.value) {
             return React.createElement('code', props);
@@ -237,6 +238,7 @@ module.exports = function markdownReactStory(content) {
 
     __REACT_IN_MARKDOWN__API.Markdown = function(props) {
       const externalElements = props.externalElements;
+      const userProps = props.userProps;
       return React.createElement(
         __REACT_IN_MARKDOWN__API.ReactMarkdown,
         Object.assign(
@@ -247,7 +249,7 @@ module.exports = function markdownReactStory(content) {
               {},
               __REACT_IN_MARKDOWN__API.reactMarkdownConfig.renderers,
               {
-                code: __REACT_IN_MARKDOWN__API.createMarkdownInjectableCode(externalElements),
+                code: __REACT_IN_MARKDOWN__API.createMarkdownInjectableCode(externalElements, userProps),
               }
             )
           },
