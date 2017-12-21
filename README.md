@@ -35,23 +35,42 @@ rules: [
 Usage in your markdown:
 --
 
-Loader enhances the markdown syntax. Like `code` lang extended property.
+Loader enhances the markdown syntax. Like `code` lang extended property. Each time you use any of the next code chunks, you got render of the contained code.
 
-- Use code block with language
-` ```js{eval} `
-to eval some script at the beginning of the document.
+- `js{eval}` To eval some script at the beginning of the document.
 
-- Use code block with language
-` ```js{render} `
-to inline render React component from the code.
+- `js{render}` To inline render React component from the code.
 
-- Use code block with language
-` ```js{+render}`
-to display the code and render the code both
+- `js{+render}` To display the code and render the code both
 
-- Use code block with language
-` ```js{render+}`
-to render the code, and then display the code
+- `js{render+}` to render the code, and then display the code
+
+## Import markdown
+
+As the result, you will get high-grade React Component.
+
+```js
+import React from 'react';
+import ReactDom from 'react-dom';
+import Readme from './Readme.md';
+
+ReactDom.render(
+  <Readme />,
+  document.getElementById('root')
+)
+```
+
+As a normal React component, it can accept props.
+
+```js
+<Readme version="v1.0.0" />
+```
+
+And markdown inline-components can use this props.
+
+```js
+<Version>{props.version}</Version>
+```
 
 ## Advanced configuration
 
@@ -104,7 +123,7 @@ module.exports = {
 
 ### AST renderer
 
-In super-advanced way you can add your custom logic to render AST to javascript.
+In super-advanced way you can add your custom logic to render AST to javascript. Also you can add some initial code to the evalChunks.
 
 ```js
 {
@@ -113,18 +132,21 @@ In super-advanced way you can add your custom logic to render AST to javascript.
   use: {
     loader: 'markdown-feat-react-loader',
     options: {
-      renderer: function(ast, evalChunks) {
+      renderer: function(ast, evalChunks, defaultRenderer) {
         // ast - Markdown ast
-        // evalChunks - chunks of code, which will be injected to the top of javascript document
-        // ...
 
-        return `...here you javascript...`;
+        // evalChunks - chunks of code, which will be injected to the top of javascript document
+        evalChunks.push(`const lodash = require('lodash');`)
+
+        return defaultRenderer(ast);
       },
     }
   }
 }
 
 ```
+
+You got the function `defaultRenderer` as the third argument, it provides you to render AST with the native logic, but you can manually convert AST to javascript code.
 
 License
 --

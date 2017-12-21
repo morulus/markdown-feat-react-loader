@@ -62,7 +62,7 @@ function defaultRenderer(ast) {
   ); }`
 }
 
-module.exports = function markdownReactStory(content) {
+module.exports = function markdownFeatReact(content) {
     const evalChunks = []
     const codechunks = []
 
@@ -137,7 +137,7 @@ module.exports = function markdownReactStory(content) {
   ast.children = ast.children.map(extractCodeChunk).filter(Boolean)
 
   /* Render js code */
-  const code = renderer(ast, evalChunks)
+  const code = renderer(ast, evalChunks, defaultRenderer)
 
   const header = `
     "use strict";
