@@ -125,7 +125,7 @@ module.exports = function markdownFeatReact(content) {
     renderer: defaultRenderer,
   }, loaderUtils.getOptions(this) || {})
 
-  const { renderer } = query
+  const { renderer, debug } = query
 
   const ast = parser.parse(content)
 
@@ -261,8 +261,14 @@ module.exports = function markdownFeatReact(content) {
       )
     }
   `
+
   const source = `${header}
 ${code}`;
+
+  if (debug) {
+    console.log(debug);
+  }
+
   const result = repl(source).code;
 
   return result
