@@ -16,6 +16,7 @@ module.exports = {
           loader :  path.join(__dirname, 'lib/index.js'),
           options: {
             config  : require.resolve(`./react-markdown.config.js`),
+            loadImages: true,
           },
         }
       },
@@ -23,6 +24,11 @@ module.exports = {
         test: /\.js$/,
         exclude: /node_modules/,
         use: 'babel-loader',
+      },
+      {
+        test: /\.png$/,
+        exclude: /node_modules/,
+        use: 'file-loader'
       }
     ]
   },

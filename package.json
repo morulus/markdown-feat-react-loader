@@ -1,6 +1,6 @@
 {
   "name": "markdown-feat-react-loader",
-  "version": "1.0.1-beta",
+  "version": "1.1.0-beta",
   "description": "Use React Components inside markdown, import markdown as React Component",
   "main": "lib/index.js",
   "scripts": {
@@ -21,6 +21,7 @@
   "license": "MIT",
   "dependencies": {
     "loader-utils": "^1.1.0",
+    "md5": "^2.2.1",
     "react-markdown": "^3.1.1",
     "remark-react": "^4.0.1",
     "remark-stringify": "^4.0.0"
@@ -33,6 +34,7 @@
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "babel-preset-env": "1.6.1",
     "babel-preset-react": "^6.24.1",
+    "file-loader": "^1.1.11",
     "gh-pages": "^1.1.0",
     "html-webpack-plugin": "^2.30.1",
     "raw-loader": "^0.5.1",

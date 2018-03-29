@@ -103,6 +103,33 @@ module.exports = {
 
 See [react-markdown#node-types](https://github.com/rexxars/react-markdown#node-types) to read more abount renderers.
 
+### Load images via your bundler
+
+Set option `loadImages` to load images, specified in block `![]()` with your bundler loader.
+
+```js
+{
+  test: /\.md$/,
+  exclude: /node_modules/,
+  use: {
+    loader : 'markdown-feat-react-loader',
+    options: {
+      loadImages: true,
+    },
+  }
+},
+{
+  test: /\.js$/,
+  exclude: /node_modules/,
+  use: 'babel-loader',
+},
+{
+  test: /\.(png|jpg)$/,
+  exclude: /node_modules/,
+  use: 'file-loader'
+}
+```
+
 ### Render HOC
 
 Also you can specify the render HOC, which accepts component, which has been extracted from markdown code, and returns new component, which contain your custom logic.

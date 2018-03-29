@@ -4,6 +4,9 @@ const astToMarkdown = require(`remark-stringify`)
 const babel = require(`babel-core`)
 const loaderUtils = require(`loader-utils`)
 const cutUseStrict = require(`./cutUseStrict`)
+const extractImages = require('./extractImages')
+const renderExtractedImages = require('./renderExtractedImages')
+const replaceByHashMap = require('./replaceByHashMap')
 
 const emptyModule = require.resolve(`./empty`)
 
@@ -43,9 +46,7 @@ const parser = unified().use(parse, { commonmark: true })
 
 const tagNameRegex = /^<([^\s/>]+)/
 const ReactElementNameRegEx = /^[A-Z]{1}[\w\d]?/
-
 const RENDER_LANG_MASK = /^(js){(\+)?render(\+)?}/
-
 const INJECT_REACT_COMPONENT_LANG = `inject:eval:chunk`
 
 function defaultRenderer(ast) {
@@ -137,13 +138,23 @@ module.exports = function markdownFeatReact(content) {
   ast.children = ast.children.map(extractCodeChunk).filter(Boolean)
 
   /* Render js code */
-  const code = renderer(ast, evalChunks, defaultRenderer)
+  let code = renderer(ast, evalChunks, defaultRenderer)
+
+  let imagesHashMap = {};
+  if (query.loadImages) {
+    /* Extract images to the variables */
+    imagesHashMap = extractImages(ast.children);
+    /* Replace all image hashes in the code */
+    code = replaceByHashMap(imagesHashMap, code)
+  }
 
   const header = `
     "use strict";
 
     var React = require('${require.resolve(`react`)}');
     ${evalChunks.join(`\n`)}
+
+    ${renderExtractedImages(imagesHashMap)}
 
     var __REACT_IN_MARKDOWN__API = {};
 

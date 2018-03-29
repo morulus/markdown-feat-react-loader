@@ -80,3 +80,9 @@ module.exports = {
 }
 
 ```
+
+## Import images
+
+There are few situation when I need to use images in the markdown
+
+![Demo](./demo.png)
