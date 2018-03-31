@@ -141,7 +141,7 @@ module.exports = function markdownFeatReact(content) {
   let code = renderer(ast, evalChunks, defaultRenderer)
 
   let imagesHashMap = {};
-  if (query.loadImages) {
+  if (query.importImages) {
     /* Extract images to the variables */
     imagesHashMap = extractImages(ast.children);
     /* Replace all image hashes in the code */

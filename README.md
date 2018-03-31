@@ -105,7 +105,7 @@ See [react-markdown#node-types](https://github.com/rexxars/react-markdown#node-t
 
 ### Load images via your bundler
 
-Set option `loadImages` to load images, specified in block `![]()` with your bundler loader.
+Set option `importImages` to load images with your bundler loader.
 
 ```js
 {
@@ -114,7 +114,7 @@ Set option `loadImages` to load images, specified in block `![]()` with your bun
   use: {
     loader : 'markdown-feat-react-loader',
     options: {
-      loadImages: true,
+      importImages: true,
     },
   }
 },

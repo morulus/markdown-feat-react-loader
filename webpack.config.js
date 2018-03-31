@@ -16,7 +16,7 @@ module.exports = {
           loader :  path.join(__dirname, 'lib/index.js'),
           options: {
             config  : require.resolve(`./react-markdown.config.js`),
-            loadImages: true,
+            importImages: true,
           },
         }
       },
