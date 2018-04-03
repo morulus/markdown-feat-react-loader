@@ -1,6 +1,6 @@
 {
   "name": "markdown-feat-react-loader",
-  "version": "1.2-beta",
+  "version": "1.2.0-beta",
   "description": "Use React Components inside markdown, import markdown as React Component",
   "main": "lib/index.js",
   "scripts": {
