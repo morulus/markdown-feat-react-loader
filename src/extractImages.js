@@ -1,4 +1,5 @@
 const md5 = require('md5');
+const isUrl = require('is-url');
 
 module.exports = function extractImages(children) {
   const images = {};
@@ -6,10 +7,12 @@ module.exports = function extractImages(children) {
     const item = children[i];
 
     if (item.type === 'image') {
-      const url = item.url;
-      const hash = `IMAGE${md5(item.url)}`;
-      item.url = hash;
-      images[hash] = url;
+      if (!isUrl(item.url)) {
+        const url = item.url;
+        const hash = `IMAGE${md5(item.url)}`;
+        item.url = hash;
+        images[hash] = url;
+      }
     }
 
 

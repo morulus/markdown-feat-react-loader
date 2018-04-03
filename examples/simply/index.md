@@ -85,4 +85,8 @@ module.exports = {
 
 There are few situation when I need to use images in the markdown
 
+**Relative:**
 ![Demo](./demo.png)
+
+**Absolute:**
+![We loves google](https://www.google.ru/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png)
