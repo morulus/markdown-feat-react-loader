@@ -10,6 +10,7 @@ export default ({ Doc, source }) => (
         padding: "20px"
       }}
     >
+      <h1>Heading: {Doc.meta.heading}</h1>
       <Doc
         runtimeProp="Hello, world!"
       />

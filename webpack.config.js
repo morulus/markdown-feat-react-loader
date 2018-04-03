@@ -17,6 +17,23 @@ module.exports = {
           options: {
             config  : require.resolve(`./react-markdown.config.js`),
             importImages: true,
+            walkAst: (ast, meta) => {
+              const headingKey = ast.children.findIndex(item => {
+                if (item.type === `heading` && item.depth === 1) {
+                  return true;
+                }
+              });
+
+              if (headingKey >= 0) {
+                meta.heading = ast.children[headingKey].children[0]
+                  && ast.children[headingKey].children[0].value;
+                ast.children.splice(headingKey, 1)
+              } else {
+                meta.heading = false;
+              }
+
+              return ast;
+            }
           },
         }
       },

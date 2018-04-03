@@ -148,6 +148,61 @@ module.exports = {
 }
 ```
 
+### AST walker
+
+Specify `walkAst` configuration property, to walk source AST, before loader will walk and render.
+
+`walkAst` accepts `ast` and `meta`. The `meta` is an object that will be placed as a static property of the the exports.
+
+Look at example, which extracts document title and puts it to the meta:
+```js
+{
+  test: /\.md$/,
+  exclude: /node_modules/,
+  use: {
+    loader: 'markdown-feat-react-loader',
+    options: {
+      walkAst: (ast, meta) => {
+        // Search for heading
+        const headingKey = ast.children.findIndex(item => {
+          if (item.type === `heading` && item.depth === 1) {
+            return true;
+          }
+        });
+
+        if (headingKey >= 0) {
+          // Place heading to the meta
+          meta.heading = ast.children[headingKey].children[0]
+            && ast.children[headingKey].children[0].value;
+          ast.children.splice(headingKey, 1)
+        } else {
+          // Place default heading
+          meta.heading = false;
+        }
+
+        return ast;
+      }
+    }
+  }
+}
+```
+
+Usage:
+```js
+import Article from 'article.md'
+
+export default() {
+  return (
+    <div>
+      <h1>{Article.meta.heading}</h1>
+      <content>
+        <Article />
+      </content>
+    </div>
+  )
+}
+```
+
 ### AST renderer
 
 In super-advanced way you can add your custom logic to render AST to javascript. Also you can add some initial code to the evalChunks.
@@ -159,7 +214,7 @@ In super-advanced way you can add your custom logic to render AST to javascript.
   use: {
     loader: 'markdown-feat-react-loader',
     options: {
-      renderer: function(ast, evalChunks, defaultRenderer) {
+      renderer: function(ast, evalChunks, defaultRenderer, meta) {
         // ast - Markdown ast
 
         // evalChunks - chunks of code, which will be injected to the top of javascript document
@@ -170,7 +225,6 @@ In super-advanced way you can add your custom logic to render AST to javascript.
     }
   }
 }
-
 ```
 
 You got the function `defaultRenderer` as the third argument, it provides you to render AST with the native logic, but you can manually convert AST to javascript code.
@@ -178,4 +232,4 @@ You got the function `defaultRenderer` as the third argument, it provides you to
 License
 --
 
-MIT, 2017
+MIT, 2017 Vladimir Kalmykov

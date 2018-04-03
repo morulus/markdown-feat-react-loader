@@ -126,9 +126,18 @@ module.exports = function markdownFeatReact(content) {
     renderer: defaultRenderer,
   }, loaderUtils.getOptions(this) || {})
 
-  const { renderer, debug } = query
+  const {
+    renderer,
+    debug,
+    walkAst,
+  } = query
 
-  const ast = parser.parse(content)
+  const meta = {};
+
+  const nativeAst = parser.parse(content)
+  const ast = typeof walkAst === 'function'
+    ? (walkAst(nativeAst, meta) || ast)
+    : ast;
 
   /* Hunt for React components. Every html element with PascalCase name will be transplied in to the
    * special code chunk, called `codechunks`. */
@@ -138,7 +147,7 @@ module.exports = function markdownFeatReact(content) {
   ast.children = ast.children.map(extractCodeChunk).filter(Boolean)
 
   /* Render js code */
-  let code = renderer(ast, evalChunks, defaultRenderer)
+  let code = renderer(ast, evalChunks, defaultRenderer, meta)
 
   let imagesHashMap = {};
   if (query.importImages) {
@@ -274,7 +283,12 @@ module.exports = function markdownFeatReact(content) {
   `
 
   const source = `${header}
-${code}`;
+${code}
+
+if (typeof module.exports === 'object' || typeof module.exports === 'function') {
+  module.exports.meta = ${JSON.stringify(meta)}
+}
+`;
 
   if (debug) {
     console.log(debug);

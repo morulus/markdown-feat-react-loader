@@ -1,3 +1,6 @@
+Awesome example
+==
+
 ```js{eval}
 import Simply from './Simply'
 import Wrapper from './Wrapper'
@@ -6,7 +9,6 @@ import Wrapper from './Wrapper'
 ```js{render}
 <h1>{props.packageJson.name}</h1>
 ```
-==
 
 ```js{render}
 <h2>{props.runtimeProp}</h2>
