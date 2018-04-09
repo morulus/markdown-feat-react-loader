@@ -136,8 +136,8 @@ module.exports = function markdownFeatReact(content) {
 
   const nativeAst = parser.parse(content)
   const ast = typeof walkAst === 'function'
-    ? (walkAst(nativeAst, meta) || ast)
-    : ast;
+    ? (walkAst(nativeAst, meta) || nativeAst)
+    : nativeAst;
 
   /* Hunt for React components. Every html element with PascalCase name will be transplied in to the
    * special code chunk, called `codechunks`. */
@@ -167,7 +167,7 @@ module.exports = function markdownFeatReact(content) {
 
     var __REACT_IN_MARKDOWN__API = {};
 
-    __REACT_IN_MARKDOWN__API.ReactMarkdown = require('react-markdown');
+    __REACT_IN_MARKDOWN__API.ReactMarkdown = require(${JSON.stringify(require.resolve('react-markdown'))});
 
     __REACT_IN_MARKDOWN__API.customReactMarkdownConfig = {
       renderers: {}
