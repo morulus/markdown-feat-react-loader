@@ -148,6 +148,34 @@ module.exports = {
 }
 ```
 
+### Custom renderers
+
+You can specify custom renderers also as in [ReactMarkdown](https://github.com/rexxars/react-markdown).
+
+```js
+{
+  renderers: {
+    heading: MyCustomHeadingComponent
+  }
+}
+```
+
+#### Chunk renderer
+
+You can specify *chunk* renderer, which will be used as wrapper for `{+render+}` elements.
+
+```js
+{
+  renderers: {
+    chunk: function MyChunk(children) {
+      return <div className={styles.MyChunkStyle}>
+        {children}
+      </div>
+    }
+  }
+}
+```
+
 ### AST walker
 
 Specify `walkAst` configuration property, to walk source AST, before loader will walk and render.

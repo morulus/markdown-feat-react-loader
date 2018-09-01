@@ -84,11 +84,6 @@ module.exports = function markdownFeatReact(content) {
             value: `${codechunks.length - 1}`,
           };
           if (plus) {
-            const code = {
-              ...item,
-              type: lang
-            }
-            ;
             return match[1]
               ? [
                 codeChunk,
@@ -211,7 +206,17 @@ module.exports = function markdownFeatReact(content) {
     __REACT_IN_MARKDOWN__API.createMarkdownInjectableCode = (function() {
       function renderExternalElement(Element, props) {
         if (typeof Element === 'function') {
-          return React.createElement(Element, props);
+          Element = React.createElement(Element, props);
+        }
+
+        console.log('__REACT_IN_MARKDOWN__API.reactMarkdownConfig.renderers', __REACT_IN_MARKDOWN__API.reactMarkdownConfig.renderers);
+
+        if (__REACT_IN_MARKDOWN__API.reactMarkdownConfig.renderers.chunk) {
+          return React.createElement(
+            __REACT_IN_MARKDOWN__API.reactMarkdownConfig.renderers.chunk,
+            props,
+            Element
+          )
         }
         return Element;
       }
