@@ -39,11 +39,11 @@ Loader enhances the markdown syntax. Like `code` lang extended property. Each ti
 
 - `js{eval}` To eval some script at the beginning of the document.
 
-- `js{render}` To inline render React component from the code.
+- `jsx{render}` To inline render React component from the code.
 
-- `js{+render}` To display the code and render the code both
+- `js{render}` Render module, exported by chunk.
 
-- `js{render+}` to render the code, and then display the code
+Keyword `render` can have an additional symbol `+`. For example `{render+}` and it means that in addition to the render, there will also be displayed a code block. If symbol `+` stays at the beginning (`{+render}`), then the code block will be placed before the rendered element.
 
 ## Import markdown
 
@@ -260,4 +260,4 @@ You got the function `defaultRenderer` as the third argument, it provides you to
 License
 --
 
-MIT, 2017 Vladimir Kalmykov
+MIT, 2017-2018 Vladimir Kalmykov

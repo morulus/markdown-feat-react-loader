@@ -10,6 +10,10 @@ const replaceByHashMap = require('./replaceByHashMap')
 
 const emptyModule = require.resolve(`./empty`)
 
+function defaultReplace(code) {
+  return code;
+}
+
 /* Babel repl */
 const repl = (code) => babel.transform(code, {
   presets: [
@@ -40,13 +44,13 @@ function flatArray(arr) {
   }, [])
 }
 
-const PACAKGE_NAME = `react-in-markdown-loader`
+const PACAKGE_NAME = `react-feat-markdown-loader`
 
 const parser = unified().use(parse, { commonmark: true })
 
 const tagNameRegex = /^<([^\s/>]+)/
 const ReactElementNameRegEx = /^[A-Z]{1}[\w\d]?/
-const RENDER_LANG_MASK = /^(js){(\+)?render(\+)?}/
+const RENDER_JSX_LANG_MASK = /^(jsx?){(\+)?render(\+)?}/
 const INJECT_REACT_COMPONENT_LANG = `inject:eval:chunk`
 
 function defaultRenderer(ast) {
@@ -67,15 +71,59 @@ module.exports = function markdownFeatReact(content) {
     const evalChunks = []
     const codechunks = []
 
+    const query = Object.assign({
+      config  : ``,
+      renderer: defaultRenderer,
+    }, loaderUtils.getOptions(this) || {})
+
+    const {
+      renderer,
+      debug,
+      walkAst
+    } = query
+
+    const replace = query.replace || defaultReplace
+
+    if (typeof replace !== 'function') {
+      throw new Error('options.replace should be a function')
+    }
+
+    /* Extract JSX Component (should start with `<`) */
     function extractJsxComponent(item) {
-      if (item.type === `code` && RENDER_LANG_MASK.test(item.lang)) {
+      if (item.type === `code` && RENDER_JSX_LANG_MASK.test(item.lang)) {
           // Detect the plus (+) character
-          const match = item.lang.match(RENDER_LANG_MASK);
+          const match = item.lang.match(RENDER_JSX_LANG_MASK);
           const lang = match[1];
           const plus = !!(match[2] || match[3]);
           const code = item.value.trim();
           const transplied = item.value.trim()
-          codechunks.push(`__REACT_IN_MARKDOWN__API.reactMarkdownConfig.renderers.render(function(props) { return (${cutUseStrict(transplied)}); }, ${JSON.stringify(code)})`)
+
+          if (lang === 'jsx') {
+            codechunks.push(`__REACT_IN_MARKDOWN__API.reactMarkdownConfig.renderers.render(function(props) { return (${replace(cutUseStrict(transplied))}); }, ${JSON.stringify(code)})`)
+          } else if (lang === 'js') {
+            codechunks.push(`__REACT_IN_MARKDOWN__API.reactMarkdownConfig.renderers.render(function(props) {
+              const module = {
+                exports: {}
+              };
+
+              const exports = module.exports;
+
+              ${replace(cutUseStrict(repl(code).code))}
+
+              var Component = module.exports.__esModule === true
+                ? module.exports.default
+                : module.exports;
+
+              if (typeof Component === 'function') {
+                return React.createElement(
+                  module.exports.default,
+                  props,
+                );
+              } else {
+                return Component;
+              }
+            })`);
+          }
           /* And ast element converts to the code with lang `chunk` */
           const codeChunk = {
             ...item,
@@ -104,196 +152,182 @@ module.exports = function markdownFeatReact(content) {
       return item
     }
 
-  // Prepare API
-  function extractCodeChunk(item) {
-    if (item.type === `code` && item.lang === `js{eval}`) {
-      evalChunks.push(item.value.trim())
-      return false
-    } else if (item.children && typeof item.children === `object` && item.children instanceof Array) {
-      item.children = item.children.map(extractCodeChunk).filter(Boolean)
-    }
-    return item
-  }
-
-
-  const query = Object.assign({
-    config  : ``,
-    renderer: defaultRenderer,
-  }, loaderUtils.getOptions(this) || {})
-
-  const {
-    renderer,
-    debug,
-    walkAst,
-  } = query
-
-  const meta = {};
-
-  const nativeAst = parser.parse(content)
-  const ast = typeof walkAst === 'function'
-    ? (walkAst(nativeAst, meta) || nativeAst)
-    : nativeAst;
-
-  /* Hunt for React components. Every html element with PascalCase name will be transplied in to the
-   * special code chunk, called `codechunks`. */
-  ast.children = flatArray(ast.children.map(extractJsxComponent));
-
-  /* Hunt eval code chunks */
-  ast.children = ast.children.map(extractCodeChunk).filter(Boolean)
-
-  /* Render js code */
-  let code = renderer(ast, evalChunks, defaultRenderer, meta)
-
-  let imagesHashMap = {};
-  if (query.importImages) {
-    /* Extract images to the variables */
-    imagesHashMap = extractImages(ast.children);
-    /* Replace all image hashes in the code */
-    code = replaceByHashMap(imagesHashMap, code)
-  }
-
-  const header = `
-    "use strict";
-
-    var React = require('${require.resolve(`react`)}');
-    ${evalChunks.join(`\n`)}
-
-    ${renderExtractedImages(imagesHashMap)}
-
-    var __REACT_IN_MARKDOWN__API = {};
-
-    __REACT_IN_MARKDOWN__API.ReactMarkdown = require(${JSON.stringify(require.resolve('react-markdown'))});
-
-    __REACT_IN_MARKDOWN__API.customReactMarkdownConfig = {
-      renderers: {}
-    };
-
-    try {
-      __REACT_IN_MARKDOWN__API.customReactMarkdownConfig = require(${query.config ? JSON.stringify(query.config) : JSON.stringify(emptyModule)});
-    } catch(e) {
-      // Nothing
-    }
-
-    if (typeof __REACT_IN_MARKDOWN__API.customReactMarkdownConfig !== "object") {
-      throw new Error("${PACAKGE_NAME}: expects config to be an object, "+(
-        typeof __REACT_IN_MARKDOWN__API.customReactMarkdownConfig
-      )+" given");
-    }
-
-    __REACT_IN_MARKDOWN__API.reactMarkdownConfig = Object.assign(
-      {},
-      __REACT_IN_MARKDOWN__API.customReactMarkdownConfig,
-      {
-        renderers: Object.assign(
-          {
-            render: function(Component) {
-              return function MarkdownRender(props) {
-                return React.createElement(
-                  Component,
-                  props
-                );
-              };
-            },
-          },
-          __REACT_IN_MARKDOWN__API.customReactMarkdownConfig.renderers,
-          {
-            code: __REACT_IN_MARKDOWN__API.customReactMarkdownConfig.renderers && __REACT_IN_MARKDOWN__API.customReactMarkdownConfig.renderers.code || __REACT_IN_MARKDOWN__API.ReactMarkdown.renderers.code
-          }
-        )
+    // Prepare API
+    function extractCodeChunk(item) {
+      if (item.type === `code` && item.lang === `js{eval}`) {
+        evalChunks.push(replace(item.value.trim()))
+        return false
+      } else if (item.children && typeof item.children === `object` && item.children instanceof Array) {
+        item.children = item.children.map(extractCodeChunk).filter(Boolean)
       }
-    )
+      return item
+    }
 
-    __REACT_IN_MARKDOWN__API.createMarkdownInjectableCode = (function() {
-      function renderExternalElement(Element, props) {
-        if (typeof Element === 'function') {
-          Element = React.createElement(Element, props);
-        }
+    const meta = {};
 
-        console.log('__REACT_IN_MARKDOWN__API.reactMarkdownConfig.renderers', __REACT_IN_MARKDOWN__API.reactMarkdownConfig.renderers);
+    const nativeAst = parser.parse(content)
+    const ast = typeof walkAst === 'function'
+      ? (walkAst(nativeAst, meta) || nativeAst)
+      : nativeAst;
 
-        if (__REACT_IN_MARKDOWN__API.reactMarkdownConfig.renderers.chunk) {
-          return React.createElement(
-            __REACT_IN_MARKDOWN__API.reactMarkdownConfig.renderers.chunk,
-            props,
-            Element
+    /* Hunt for React components. Every html element with PascalCase name will be transplied in to the
+     * special code chunk, called `codechunks`. */
+    ast.children = flatArray(ast.children.map(extractJsxComponent));
+
+    /* Hunt eval code chunks */
+    ast.children = ast.children.map(extractCodeChunk).filter(Boolean)
+
+    /* Render js code */
+    let code = renderer(ast, evalChunks, defaultRenderer, meta)
+
+    let imagesHashMap = {};
+    if (query.importImages) {
+      /* Extract images to the variables */
+      imagesHashMap = extractImages(ast.children);
+      /* Replace all image hashes in the code */
+      code = replaceByHashMap(imagesHashMap, code)
+    }
+
+    const header = `
+      "use strict";
+
+      var React = require('${require.resolve(`react`)}');
+      ${evalChunks.join(`\n`)}
+
+      ${renderExtractedImages(imagesHashMap)}
+
+      var __REACT_IN_MARKDOWN__API = {};
+
+      __REACT_IN_MARKDOWN__API.ReactMarkdown = require(${JSON.stringify(require.resolve('react-markdown'))});
+
+      __REACT_IN_MARKDOWN__API.customReactMarkdownConfig = {
+        renderers: {}
+      };
+
+      try {
+        __REACT_IN_MARKDOWN__API.customReactMarkdownConfig = require(${query.config ? JSON.stringify(query.config) : JSON.stringify(emptyModule)});
+      } catch(e) {
+        // Nothing
+      }
+
+      if (typeof __REACT_IN_MARKDOWN__API.customReactMarkdownConfig !== "object") {
+        throw new Error("${PACAKGE_NAME}: expects config to be an object, "+(
+          typeof __REACT_IN_MARKDOWN__API.customReactMarkdownConfig
+        )+" given");
+      }
+
+      __REACT_IN_MARKDOWN__API.reactMarkdownConfig = Object.assign(
+        {},
+        __REACT_IN_MARKDOWN__API.customReactMarkdownConfig,
+        {
+          renderers: Object.assign(
+            {
+              render: function(Component) {
+                return function MarkdownRender(props) {
+                  return React.createElement(
+                    Component,
+                    props
+                  );
+                };
+              },
+            },
+            __REACT_IN_MARKDOWN__API.customReactMarkdownConfig.renderers,
+            {
+              code: __REACT_IN_MARKDOWN__API.customReactMarkdownConfig.renderers && __REACT_IN_MARKDOWN__API.customReactMarkdownConfig.renderers.code || __REACT_IN_MARKDOWN__API.ReactMarkdown.renderers.code
+            }
           )
         }
-        return Element;
-      }
-
-      function renderError(message) {
-        return React.createElement(
-          'pre',
-          null,
-          React.createElement('code', {
-            style: {
-              backgroundColor: "red",
-              color: "black",
-            },
-            message
-          })
-        )
-      }
-
-      return function reCreateMarkdownInjectableCode(externalElements, userProps) {
-        return function MarkdownInjectableCode(props) {
-          if (props.language === ${JSON.stringify(INJECT_REACT_COMPONENT_LANG)}) {
-            if (!externalElements) {
-              return renderError("No props.externalElements provided");
-            }
-
-            const Element = externalElements[props.value.trim()];
-
-            if (!Element) {
-              return renderError("External element in undefined at externalElements["+props.value.trim()+"]");
-            }
-
-            return renderExternalElement(Element, userProps);
-          }
-          if (!props.value) {
-            return React.createElement('code', props);
-          }
-          return React.createElement(
-            __REACT_IN_MARKDOWN__API.reactMarkdownConfig.renderers.code,
-            props,
-            props.children
-          )
-        }
-      }
-    })()
-
-    __REACT_IN_MARKDOWN__API.externalElements = [${codechunks.join(`,\n`)}];
-
-    __REACT_IN_MARKDOWN__API.Markdown = function(props) {
-      const externalElements = props.externalElements;
-      const userProps = props.userProps;
-      return React.createElement(
-        __REACT_IN_MARKDOWN__API.ReactMarkdown,
-        Object.assign(
-          {},
-          __REACT_IN_MARKDOWN__API.reactMarkdownConfig,
-          {
-            renderers: Object.assign(
-              {},
-              __REACT_IN_MARKDOWN__API.reactMarkdownConfig.renderers,
-              {
-                code: __REACT_IN_MARKDOWN__API.createMarkdownInjectableCode(externalElements, userProps),
-              }
-            )
-          },
-          props,
-        )
       )
-    }
-  `
 
-  const source = `${header}
-${code}
+      __REACT_IN_MARKDOWN__API.createMarkdownInjectableCode = (function() {
+        function renderExternalElement(Element, props) {
+          if (typeof Element === 'function') {
+            Element = React.createElement(Element, props);
+          }
 
-if (typeof module.exports === 'object' || typeof module.exports === 'function') {
-  module.exports.meta = ${JSON.stringify(meta)}
-}
-`;
+          if (__REACT_IN_MARKDOWN__API.reactMarkdownConfig.renderers.chunk) {
+            return React.createElement(
+              __REACT_IN_MARKDOWN__API.reactMarkdownConfig.renderers.chunk,
+              props,
+              Element
+            )
+          }
+          return Element;
+        }
+
+        function renderError(message) {
+          return React.createElement(
+            'pre',
+            null,
+            React.createElement('code', {
+              style: {
+                backgroundColor: "red",
+                color: "black",
+              },
+              message
+            })
+          )
+        }
+
+        return function reCreateMarkdownInjectableCode(externalElements, userProps) {
+          return function MarkdownInjectableCode(props) {
+            if (props.language === ${JSON.stringify(INJECT_REACT_COMPONENT_LANG)}) {
+              if (!externalElements) {
+                return renderError("No props.externalElements provided");
+              }
+
+              const Element = externalElements[props.value.trim()];
+
+              if (!Element) {
+                return renderError("External element in undefined at externalElements["+props.value.trim()+"]");
+              }
+
+              return renderExternalElement(Element, userProps);
+            }
+            if (!props.value) {
+              return React.createElement('code', props);
+            }
+            return React.createElement(
+              __REACT_IN_MARKDOWN__API.reactMarkdownConfig.renderers.code,
+              props,
+              props.children
+            )
+          }
+        }
+      })()
+
+      __REACT_IN_MARKDOWN__API.externalElements = [${codechunks.join(`,\n`)}];
+
+      __REACT_IN_MARKDOWN__API.Markdown = function(props) {
+        const externalElements = props.externalElements;
+        const userProps = props.userProps;
+        return React.createElement(
+          __REACT_IN_MARKDOWN__API.ReactMarkdown,
+          Object.assign(
+            {},
+            __REACT_IN_MARKDOWN__API.reactMarkdownConfig,
+            {
+              renderers: Object.assign(
+                {},
+                __REACT_IN_MARKDOWN__API.reactMarkdownConfig.renderers,
+                {
+                  code: __REACT_IN_MARKDOWN__API.createMarkdownInjectableCode(externalElements, userProps),
+                }
+              )
+            },
+            props,
+          )
+        )
+      }
+    `
+
+    const source = `${header}
+  ${code}
+
+  if (typeof module.exports === 'object' || typeof module.exports === 'function') {
+    module.exports.meta = ${JSON.stringify(meta)}
+  }
+  `;
 
   if (debug) {
     console.log(debug);
