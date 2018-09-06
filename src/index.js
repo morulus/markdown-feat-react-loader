@@ -3,6 +3,8 @@ const parse = require(`remark-parse`)
 const astToMarkdown = require(`remark-stringify`)
 const babel = require(`babel-core`)
 const loaderUtils = require(`loader-utils`)
+const beautify = require('js-beautify').js
+
 const cutUseStrict = require(`./cutUseStrict`)
 const extractImages = require('./extractImages')
 const renderExtractedImages = require('./renderExtractedImages')
@@ -19,7 +21,7 @@ const repl = (code) => babel.transform(code, {
   presets: [
     [require.resolve(`babel-preset-env`), {
       targets: {
-        browsers: [`last 2 versions`],
+        ie: 10,
       },
     }],
   ],
@@ -99,7 +101,7 @@ module.exports = function markdownFeatReact(content) {
           const transplied = item.value.trim()
 
           if (lang === 'jsx') {
-            codechunks.push(`__REACT_IN_MARKDOWN__API.reactMarkdownConfig.renderers.render(function(props) { return (${replace(cutUseStrict(transplied))}); }, ${JSON.stringify(code)})`)
+            codechunks.push(`__REACT_IN_MARKDOWN__API.reactMarkdownConfig.renderers.render(function(props) { return (${cutUseStrict(transplied)}); }, ${JSON.stringify(code)})`)
           } else if (lang === 'js') {
             codechunks.push(`__REACT_IN_MARKDOWN__API.reactMarkdownConfig.renderers.render(function(props) {
               const module = {
@@ -333,7 +335,7 @@ module.exports = function markdownFeatReact(content) {
     console.log(debug);
   }
 
-  const result = repl(source).code;
+  const result = beautify(repl(source).code, { indent_size: 2, space_in_empty_paren: true });
 
   return result
 }
