@@ -33,7 +33,7 @@ const repl = (code) => babel.transform(code, {
   comments  : false,
   compact   : true,
   filename  : `md.chunk.js`,
-  sourceType: `module`,
+  sourceType: `module`
 })
 
 function isArray(a) {
@@ -85,9 +85,14 @@ module.exports = function markdownFeatReact(content) {
     } = query
 
     const replace = query.replace || defaultReplace
+    const aliases = query.aliases || {};
 
     if (typeof replace !== 'function') {
       throw new Error('options.replace should be a function')
+    }
+
+    if (typeof aliases !== 'object') {
+      throw new Error('options.aliases should be an object')
     }
 
     /* Extract JSX Component (should start with `<`) */
@@ -103,7 +108,7 @@ module.exports = function markdownFeatReact(content) {
           if (lang === 'jsx') {
             codechunks.push(`__REACT_IN_MARKDOWN__API.reactMarkdownConfig.renderers.render(function(props) { return (${cutUseStrict(transplied)}); }, ${JSON.stringify(code)})`)
           } else if (lang === 'js') {
-            codechunks.push(`__REACT_IN_MARKDOWN__API.reactMarkdownConfig.renderers.render(function(props) {
+            codechunks.push(`__REACT_IN_MARKDOWN__API.reactMarkdownConfig.renderers.render((function() {
               const module = {
                 exports: {}
               };
@@ -116,15 +121,17 @@ module.exports = function markdownFeatReact(content) {
                 ? module.exports.default
                 : module.exports;
 
-              if (typeof Component === 'function') {
-                return React.createElement(
-                  module.exports.default,
-                  props,
-                );
-              } else {
-                return Component;
+              return function(props) {
+                if (typeof Component === 'function') {
+                  return React.createElement(
+                    module.exports.default,
+                    props,
+                  );
+                } else {
+                  return Component;
+                }
               }
-            })`);
+            })())`);
           }
           /* And ast element converts to the code with lang `chunk` */
           const codeChunk = {
@@ -271,8 +278,13 @@ module.exports = function markdownFeatReact(content) {
           )
         }
 
-        return function reCreateMarkdownInjectableCode(externalElements, userProps) {
+        return function reCreateMarkdownInjectableCode(mainComponent) {
           return function MarkdownInjectableCode(props) {
+            const {
+              externalElements,
+              userProps
+            } = mainComponent.props;
+
             if (props.language === ${JSON.stringify(INJECT_REACT_COMPONENT_LANG)}) {
               if (!externalElements) {
                 return renderError("No props.externalElements provided");
@@ -300,27 +312,33 @@ module.exports = function markdownFeatReact(content) {
 
       __REACT_IN_MARKDOWN__API.externalElements = [${codechunks.join(`,\n`)}];
 
-      __REACT_IN_MARKDOWN__API.Markdown = function(props) {
-        const externalElements = props.externalElements;
-        const userProps = props.userProps;
-        return React.createElement(
-          __REACT_IN_MARKDOWN__API.ReactMarkdown,
-          Object.assign(
-            {},
-            __REACT_IN_MARKDOWN__API.reactMarkdownConfig,
-            {
-              renderers: Object.assign(
-                {},
-                __REACT_IN_MARKDOWN__API.reactMarkdownConfig.renderers,
-                {
-                  code: __REACT_IN_MARKDOWN__API.createMarkdownInjectableCode(externalElements, userProps),
-                }
-              )
-            },
-            props,
+      class StateFulMarkdown extends React.Component {
+        constructor(...args) {
+          super(...args);
+          this.codeRenderer = __REACT_IN_MARKDOWN__API.createMarkdownInjectableCode(this)
+        }
+        render() {
+          return React.createElement(
+            __REACT_IN_MARKDOWN__API.ReactMarkdown,
+            Object.assign(
+              {},
+              __REACT_IN_MARKDOWN__API.reactMarkdownConfig,
+              {
+                renderers: Object.assign(
+                  {},
+                  __REACT_IN_MARKDOWN__API.reactMarkdownConfig.renderers,
+                  {
+                    code: this.codeRenderer,
+                  }
+                )
+              },
+              this.props,
+            )
           )
-        )
+        }
       }
+
+      __REACT_IN_MARKDOWN__API.Markdown = StateFulMarkdown;
     `
 
     const source = `${header}
